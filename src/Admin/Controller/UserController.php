@@ -4,10 +4,15 @@ namespace Admin\Controller;
 
 use App\Entity\Group;
 use Admin\Controller\Traits\Routes\LinkUnlinkTrait;
+use FOS\RestBundle\Util\Codes;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use vierbergenlars\Bundle\RadRestBundle\Manager\SecuredResourceManager;
 use Admin\Security\DefaultAuthorizationChecker;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use vierbergenlars\Bundle\RadRestBundle\View\View;
 
 class UserController extends DefaultController
 {
@@ -81,6 +86,7 @@ class UserController extends DefaultController
     protected function getBatchActions()
     {
         $actions = parent::getBatchActions();
+        unset($actions['DELETE']);
         if ($this->hasRole('ROLE_SCOPE_W_PROFILE_ENABLED')) {
             $actions['Account enabled']['PATCH_enabled_true'] = 'Enable';
             $actions['Account enabled']['PATCH_enabled_false'] = 'Disable';
@@ -109,6 +115,20 @@ class UserController extends DefaultController
                 break;
             default:
                 parent::handleBatch($action, $subjects);
+            case 'DELETE':
+                break;
         }
+    }
+
+    public function deleteAction(Request $request, $id)
+    {
+        $object = $this->getResourceManager()->find($id);
+        if(!$object)
+            throw new NotFoundHttpException;
+        /* @var $object \App\Entity\User */
+        if(!$object->getGroups()->isEmpty())
+            throw new ConflictHttpException('Groups should be empty before deleting user.');
+
+        return parent::deleteAction($request, $id);
     }
 }
