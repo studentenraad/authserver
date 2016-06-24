@@ -46,3 +46,5 @@ DirectoryIndex app.php
         # RedirectTemp cannot be used instead
     </IfModule>
 </IfModule>
+SetEnvIf Authorization .+ R_HTTP_AUTHORIZATION=$0
+
